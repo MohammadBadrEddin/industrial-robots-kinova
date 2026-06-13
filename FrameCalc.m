@@ -2,43 +2,43 @@ clc, clear all, close all;
 
 figure; hold on; grid on; axis equal; view(3);
 T0 = eye(4);
-drawFrame(T0);  % F0
+drawFrame(T0);  
 disp('T0')
 disp(T0)
 
 T01 = makeFrame(-89, -175, 90, [-0.78; 0.15; 0.21]);
-drawFrame(T01);     % F1
+drawFrame(T01);     
 disp('T01')
 disp(T01)
 
 T02 = makeFrame(-89, -175, 90, [-0.78; -0.05; 0.21]);
-drawFrame(T02);     % F2
+drawFrame(T02);     
 disp('T02')
 disp(T02)
 
 T03 = makeFrame(91, -5, 10, [-0.55; -0.2; 0.21]);
-drawFrame(T03);     % F3
+drawFrame(T03);     
 disp('T03')
 disp(T03)
  
 
 % Funktionen
 function R = rotX(angle_deg)
-    a = angle_deg;%deg2rad(angle_deg);
+    a = angle_deg;
     R = [1      0       0;
          0  cosd(a) -sind(a);
          0  sind(a)  cosd(a)];
 end
 
 function R = rotY(angle_deg)
-    a = angle_deg;%deg2rad(angle_deg);
+    a = angle_deg;
     R = [ cosd(a) 0 sind(a);
               0  1      0;
          -sind(a) 0 cosd(a)];
 end
 
 function R = rotZ(angle_deg)
-    a = angle_deg;%deg2rad(angle_deg);
+    a = angle_deg;
     R = [cosd(a) -sind(a) 0;
          sind(a)  cosd(a) 0;
              0       0  1];
