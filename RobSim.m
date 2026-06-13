@@ -66,6 +66,16 @@ gen3 = loadrobot("kinovaGen3");
 gen3.DataFormat = 'column';
 eeName = 'EndEffector_Link';
 
+%% Greifer (Robotiq 2F-85) fuer die Visualisierung anhaengen
+% gen3 (7 Gelenke) bleibt unveraendert fuer FK/Jacobian/IK/Dynamik.
+% gen3_vis ist nur fuer show() gedacht und traegt zusaetzlich den Greifer.
+gen3_vis = loadrobot("kinovaGen3");
+gen3_vis.DataFormat = 'column';
+gripper  = loadrobot("robotiq2F85");
+gripper.DataFormat = 'column';
+addSubtree(gen3_vis, eeName, gripper, 'ReplaceBase', false);
+qVisTemplate = homeConfiguration(gen3_vis);   % Greifer-Gelenke bleiben in Home-Pose
+
 %% DH-Parameter Kinova Gen3 (offiziell, klassisches DH, a=0 fuer alle Links)
 % Standard DH: T_i = Rot_z(q_i + theta_off) * Trans_z(d) * Rot_x(alpha)
 %
@@ -93,7 +103,7 @@ labels  = {'Home', 'qF1', 'qF2', 'qF3'};
 %% Figure (Assignment 2)
 fig2 = figure;
 ax2  = axes(fig2);
-show(gen3, q_home, 'PreservePlot', false, 'Parent', ax2);
+show(gen3_vis, withGripper(q_home, qVisTemplate), 'PreservePlot', false, 'Parent', ax2, 'Frames', 'off');
 hold(ax2, 'on'); grid(ax2, 'on'); view(ax2, 3);
 xlim(ax2, [-1.2  1.2]);
 ylim(ax2, [-1.2  1.2]);
@@ -135,7 +145,7 @@ for k = 1:3
         vm = V(:, id);
 
         % Roboter anzeigen
-        show(gen3, q, 'PreservePlot', false, 'Parent', ax2);
+        show(gen3_vis, withGripper(q, qVisTemplate), 'PreservePlot', false, 'Parent', ax2, 'Frames', 'off');
 
         % vm-Vektor in Magenta
         if ~isempty(h_vm) && isvalid(h_vm)
@@ -196,7 +206,7 @@ numSamples      = n_seg * samples_per_seg + 1;
 %% Animation: Pick & Place (Joint Space)
 fig3 = figure;
 ax3  = axes(fig3);
-show(gen3, q_home, 'PreservePlot', false, 'Parent', ax3);
+show(gen3_vis, withGripper(q_home, qVisTemplate), 'PreservePlot', false, 'Parent', ax3, 'Frames', 'off');
 hold(ax3, 'on'); grid(ax3, 'on'); view(ax3, 3);
 xlim(ax3, [-1.2 1.2]); ylim(ax3, [-1.2 1.2]); zlim(ax3, [-0.2 1.5]);
 axis(ax3, 'vis3d');
@@ -204,7 +214,7 @@ xlabel(ax3, 'x'); ylabel(ax3, 'y'); zlabel(ax3, 'z');
 title(ax3, 'Assignment 3 – Pick & Place (Joint Space, Point-to-Point)');
 
 for k = 1:numSamples
-    show(gen3, q_traj(:,k), 'PreservePlot', false, 'Parent', ax3);
+    show(gen3_vis, withGripper(q_traj(:,k), qVisTemplate), 'PreservePlot', false, 'Parent', ax3, 'Frames', 'off');
     drawnow;
 end
 
@@ -227,7 +237,7 @@ end
 
 fig4 = figure;
 ax4  = axes(fig4);
-show(gen3, qF1, 'PreservePlot', false, 'Parent', ax4);
+show(gen3_vis, withGripper(qF1, qVisTemplate), 'PreservePlot', false, 'Parent', ax4, 'Frames', 'off');
 hold(ax4, 'on'); grid(ax4, 'on'); view(ax4, 3);
 xlim(ax4, [-1.2 1.2]); ylim(ax4, [-1.2 1.2]); zlim(ax4, [-0.2 1.5]);
 axis(ax4, 'vis3d');
@@ -235,7 +245,7 @@ xlabel(ax4, 'x'); ylabel(ax4, 'y'); zlabel(ax4, 'z');
 title(ax4, 'Assignment 3 – Cartesian Space Pfad (F1 -> F3)');
 
 for k = 1:numCart
-    show(gen3, q_cart(:,k), 'PreservePlot', false, 'Parent', ax4);
+    show(gen3_vis, withGripper(q_cart(:,k), qVisTemplate), 'PreservePlot', false, 'Parent', ax4, 'Frames', 'off');
     drawnow;
 end
 
@@ -289,6 +299,13 @@ function T = dhFrame(theta, d, a, alpha)
     Rx = [1 0 0;  0 ca -sa;  0 sa ca];
     t  = [a*ct; a*st; d];
     T  = [Rz*Rx, t; 0 0 0 1];
+end
+
+function qv = withGripper(q, qVisTemplate)
+    % Fuegt die 7 Arm-Gelenkwerte q in die Konfiguration von gen3_vis ein;
+    % die Greifer-Gelenke bleiben dabei auf ihrem Home-Wert (qVisTemplate)
+    qv = qVisTemplate;
+    qv(1:numel(q)) = q;
 end
 
 % --- Hilfsfunktionen fuer Assignment 1 ---
