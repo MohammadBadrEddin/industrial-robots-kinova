@@ -5,7 +5,7 @@ close all; clc; clear all
 %% =========================================================
 
 %% 2.3 Frames definieren und zeichnen
-figure; hold on; grid on; axis equal; view(3);
+figure('WindowState', 'maximized'); hold on; grid on; axis equal; view(3);
 xlabel('x'); ylabel('y'); zlabel('z');
 title('Assignment 1 - Frame Manipulation');
 
@@ -115,7 +115,7 @@ configs = {q_home, qF1, qF2, qF3};
 labels  = {'Home', 'qF1', 'qF2', 'qF3'};
 
 %% Figure (Assignment 2)
-fig2 = figure;
+fig2 = figure('WindowState', 'maximized');
 ax2  = axes(fig2);
 show(gen3_vis, withGripper(q_home, qVisTemplate), 'PreservePlot', false, 'Parent', ax2, 'Frames', 'off');
 hold(ax2, 'on'); grid(ax2, 'on'); view(ax2, 3);
@@ -260,7 +260,7 @@ numSamples      = n_seg * samples_per_seg + 1;
 event_times = (event_idx - 1) * seg_time;   % Zeiten der Greif-/Ablege-Ereignisse
 
 %% Animation: Pick & Place (Joint Space)
-fig3 = figure;
+fig3 = figure('WindowState', 'maximized');
 ax3  = axes(fig3);
 show(gen3_vis, withGripper(q_home, qVisTemplate), 'PreservePlot', false, 'Parent', ax3, 'Frames', 'off');
 hold(ax3, 'on'); grid(ax3, 'on'); view(ax3, 3);
@@ -319,7 +319,7 @@ for s = 1:numCartSeg
 end
 numCart = size(q_cart, 2);
 
-fig4 = figure;
+fig4 = figure('WindowState', 'maximized');
 ax4  = axes(fig4);
 show(gen3_vis, withGripper(qF1, qVisTemplate), 'PreservePlot', false, 'Parent', ax4, 'Frames', 'off');
 hold(ax4, 'on'); grid(ax4, 'on'); view(ax4, 3);
@@ -436,7 +436,7 @@ fprintf('\n=== Energiebilanz (Assignment 3, Gesamttrajektorie) ===\n');
 fprintf('Netto-Energie E(end):                              %.2f J  (Start = Ende -> ~0)\n', E(end));
 fprintf('Energieverbrauch (nur Antreiben, ohne Rueckspeisung): %.2f J\n', E_pos(end));
 
-fig5 = figure;
+fig5 = figure('WindowState', 'maximized');
 subplot(2,1,1);
 plot(t_traj, P, 'LineWidth', 1.5); grid on;
 xlabel('t [s]'); ylabel('P [W]');
