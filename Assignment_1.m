@@ -53,6 +53,10 @@ zlim([0 0.5]);
 % -------------------------------------------------------------------------
 % 2.4 Spatial transformation between frames
 
+disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+disp('Homogeneous Transformation matrices')
+disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+
 % T_01: from F0 to F1 / position of F1 described with F0
 disp('T01=')
 disp(T01)
@@ -75,6 +79,10 @@ disp(T20)
 
 % -------------------------------------------------------------------------
 % 2.5 Transformation of point coordinates from a frame to another
+
+disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+disp('Transformation of point coordinates')
+disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
 
 % Point coordinates
 % add last '1' to meet the spatial length of transformation matrix
