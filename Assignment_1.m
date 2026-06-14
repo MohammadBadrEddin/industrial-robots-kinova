@@ -43,6 +43,11 @@ view(3);
 [T02, T02_inv] = make_n_drawFrame(O2_rot, O02, 'F2', 0.15);     % Create Frame F2
 [T03, T03_inv] = make_n_drawFrame(O3_rot, O03, 'F3', 0.15);     % Create Frame F3
 title('Drawings of F0 to F3')
+xlabel('X')
+ylabel('Y')
+zlabel('Z')
+ylim([-0.4 0.4])
+zlim([0 0.5]);
 
 
 % -------------------------------------------------------------------------
@@ -73,8 +78,8 @@ disp(T20)
 
 % Point coordinates
 % add last '1' to meet the spatial length of transformation matrix
-P3 = [1; 0; 0; 1];          % "O3P3H": P3 given in terms of F3
-P2 = [-1; 0; -1; 1];        % "O2P2H": P2 given in terms of F2
+P3 = [1; 0; 0; 1];          % "O3P3H": P3 given in respect to F3
+P2 = [-1; 0; -1; 1];        % "O2P2H": P2 given in respect to F2
 
 % calculate "O0P3H": P3 given in terms of F0
 P3_F0 = T03 * P3;
