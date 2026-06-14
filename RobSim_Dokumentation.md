@@ -101,6 +101,31 @@ eeName = 'EndEffector_Link';
 - `loadrobot` lädt das offizielle URDF-Modell des Kinova Gen3 aus der Robotics System Toolbox – das ist unser "digitaler Zwilling" / Referenz für alle Vergleiche.
 - `DataFormat = 'column'`: Gelenkwinkel werden als Spaltenvektor (7×1) übergeben.
 
+### Greifer für die Visualisierung (`RobSim.m:69-76`)
+```matlab
+gen3_vis = loadrobot("kinovaGen3");
+gen3_vis.DataFormat = 'column';
+gripper  = loadrobot("robotiq2F85");
+gripper.DataFormat = 'column';
+addSubtree(gen3_vis, eeName, gripper, 'ReplaceBase', false);
+qVisTemplate = homeConfiguration(gen3_vis);
+```
+- `gen3` (7 Gelenke) bleibt **unverändert** und wird für **alle Berechnungen** (FK, Jacobian, IK, Dynamik) verwendet – an der Mathematik der Assignments ändert sich nichts.
+- `gen3_vis` ist eine **zweite Kopie** des Roboters, an deren `EndEffector_Link` per `addSubtree` ein **Robotiq 2F-85** Greifer (`robotiq2F85`, einziges 2-Finger-Greifermodell der MATLAB Robot Library, laut Doku kompatibel mit Kinova Gen3) angehängt wird. `gen3_vis` wird **nur für `show()`** benutzt.
+- `addSubtree` hängt den Greifer als zusätzliche Bodies/Gelenke an `gen3_vis` an. Dadurch hat `gen3_vis` mehr Gelenke als `gen3` (7 Armgelenke + Greifergelenke).
+- `qVisTemplate = homeConfiguration(gen3_vis)` liefert den vollen Konfigurationsvektor (Arm + Greifer) in der Home-Stellung.
+
+**Hilfsfunktion `withGripper(q, qVisTemplate)`** (am Ende der Datei):
+```matlab
+function qv = withGripper(q, qVisTemplate)
+    qv = qVisTemplate;
+    qv(1:numel(q)) = q;
+end
+```
+- Setzt die ersten 7 Einträge von `qVisTemplate` (= die Armgelenke, in derselben Reihenfolge wie in `gen3`) auf die aktuellen 7 Armwinkel `q`.
+- Die restlichen Einträge (Greifergelenke) bleiben auf ihrem Home-Wert (Greifer bleibt optisch geöffnet/in Ruhestellung).
+- Alle 6 `show(...)`-Aufrufe in Figures 2-4 verwenden jetzt `show(gen3_vis, withGripper(q, qVisTemplate), ..., 'Frames', 'off')` statt `show(gen3, q, ...)`. `'Frames','off'` blendet die vielen Koordinatentriaden der einzelnen Greifer-Bodies aus.
+
 ### DH-Parameter-Tabelle (`RobSim.m:69-82`)
 ```matlab
 DH = [
@@ -298,3 +323,32 @@ E = cumtrapz(t_traj, P);
 - **F1/F2/F3 (Assignment 1)** ↔ **qF1/qF2/qF3 (Assignment 2)**: die Gelenkwinkel sind so gewählt, dass `T08(qFi)` ≈ `T0i` (Endeffektor erreicht genau die in Assignment 1 definierten Frames).
 - **wrapToPi** taucht zweimal auf: einmal für eine einzelne Interpolation (Assignment 2, `RobSim.m:120`) und einmal kumulativ für eine ganze Wegpunktkette (Assignment 3, `RobSim.m:182-187`) – gleiches Grundprinzip, unterschiedlicher Maßstab.
 - **`trapveltraj`/`q_traj, qd_traj, qdd_traj`** (Assignment 3a) sind die Eingabe für `inverseDynamics` (Assignment 3 Energie) – ohne die Trajektorienplanung mit definierten Geschwindigkeiten/Beschleunigungen gäbe es keine sinnvollen `τ(t)`.
+
+---
+
+## Theoretischer Hintergrund (Bezug zu den Vorlesungsfolien)
+
+Quelle: `C:\Users\masou\Desktop\IRO\Vorlesungen\` (Prof. Kaigom, "Industrial Robotics"). Diese Zuordnung verbindet die Folien-Formeln mit den Code-Stellen.
+
+### Zu Assignment 1 – Vorlesung "Homogeneous Transformation"
+- **Folie 10**: Definition der HTM `T12 = [R12, O1O2; 0 0 0 1]` und der homogenen Punktdarstellung `O1P_H = [O1P; 1] = T12 * O2P_H`. → entspricht `T01 = [R1,O1;0 0 0 1]` und `P3_F0 = T03 * [P3;1]` in `RobSim.m`.
+- **Folie 11**: `T21 = T12⁻¹ = inv(T12)`, allgemein `Tji = inv(T0j)*T0i`. → `T21 = inv(T02)*T01` (`RobSim.m:35`).
+- **Folie 12**: Verkettung mehrerer Transformationen `O4P_H = T43*T31*T12*O2P_H`. → `P3_F1 = inv(T01)*T03*[P3;1]` (`RobSim.m:50`) ist genau so eine Verkettung (F3→F0→F1).
+- **Folie 14 (Application #3.4)**: vollständig durchgerechnetes Zahlenbeispiel für Rotation + Translation + Punkttransformation – gutes Referenzbeispiel, um die eigenen Zahlen aus Assignment 1 zu plausibilisieren.
+
+### Zu Assignment 2 – Vorlesung "Homogeneous Transformation" (DH-Teil) + "Velocity Mapping"
+- **Folie 19-20**: Definition der 4 DH-Parameter (θᵢ, dᵢ, aᵢ, αᵢ) und die resultierende Matrix `T(i-1)(i) = Rz(θ)·Tz(d)·Tx(a)·Rx(α)`. → exakt `dhFrame(theta,d,a,alpha)` (`RobSim.m:284-292`).
+- **Folie 22**: Kette `OwP_H = Tw0·T01·T12·...·T67·O7P_H` – Vorwärtskinematik als Produkt aller Gelenktransformationen + Tool-Frame. → `forwardKin(q,DH)` (`RobSim.m:272-282`).
+- **Velocity Mapping, Folie 3**: Grundgleichung `Ẋ_E = J·q̇`, Jacobian `J = ∂X/∂q`. → Basis für `geometricJacobian(gen3,q,eeName)`.
+- **Velocity Mapping, Folie 11-13**: Singularität, wenn `det(J·Jᵀ) ≈ 0` → kleine kartesische Geschwindigkeiten erfordern **sehr große** Gelenkgeschwindigkeiten (Application #4: `q̇_d = [50, -100]` aus `Ẋ_E=[0.01,0]`). Erklärt, warum manche Konfigurationen "kritischer" sind.
+- **Velocity Mapping, Folie 14-15**: **Manipulierbarkeitsellipse** `E = J·Jᵀ`. Eigenvektoren = Hauptachsen, Eigenwerte = (Quadrat der) Halbachsenlängen. Der Eigenvektor zum **größten** Eigenwert zeigt die Richtung der **höchsten kartesischen Bewegungsfähigkeit**. → exakt `vm = V(:,id)` mit `id = argmax(eig)` (`RobSim.m:107-109`, `159-162`).
+
+### Zu Assignment 3 – Vorlesung "Motion Planning" (Trajectory) + "Rigid Body Dynamics"
+- **Motion Planning, Folie 3-4**: Unterscheidung **PTP** (Interpolation im Gelenkraum, kartesischer Pfad nicht vorgegeben) vs. **CP/Continuous Path** (Interpolation im kartesischen Raum, braucht IK pro Zeitschritt, Endeffektor-Bewegung ist primäres Ziel). → 4.3a (`wayPoints`+`trapveltraj`) = PTP, 4.3b (`transformtraj`+`inverseKinematics`) = CP.
+- **Motion Planning, Folie 10-11**: Trapezprofil mit 3 Phasen – Beschleunigung `q(t)=qi+0.5*q̈p*t²`, Plateau (konstante Geschwindigkeit), Bremsen. Genau dieses Profil erzeugt `trapveltraj` automatisch pro Gelenk/Segment (`RobSim.m:193-194`).
+- **Rigid Body Dynamics, Folie 2**: bestätigt offiziell die Aufgabenstellung "Set 3" = "Point-to-point motion planning and tracking" + "Monitoring of the energy consumption from sensed and collected robot data", Präsentation 15.06., 09:00.
+- **Rigid Body Dynamics, Folie 18-19**: Newton-Euler-Gleichung `f_TR = M·a` (Kräfte/Momente = Massenmatrix × Beschleunigung, inkl. Gravitation, Coriolis, Trägheit). `inverseDynamics(gen3,q,q̇,q̈)` (`RobSim.m:246-248`) löst genau diese Gleichung nach `τ` auf. `gen3.Gravity=[0 0 -9.81]` (`RobSim.m:243`) sorgt dafür, dass die Gravitationskraft in `f_T` berücksichtigt wird.
+- **Leistung/Energie** (`RobSim.m:250-251`, Standardphysik, nicht direkt auf einer Folie): `P(t)=Σ τᵢ·q̇ᵢ`, `E(t)=∫P dt` via `cumtrapz`.
+
+### Empfehlung für die Präsentation
+Fokus auf **4.3a (PTP) + 4.4 (Energie)** als Kern von "Set 3"; 4.3b (CP) als zusätzliche Vertiefung erwähnen; die `vm`-Manipulierbarkeit aus Assignment 2 optional als Kontext nutzen (z.B. "Konfigurationen mit niedriger Manipulierbarkeit → höhere Gelenkgeschwindigkeiten/-momente → höhere Leistung?").
